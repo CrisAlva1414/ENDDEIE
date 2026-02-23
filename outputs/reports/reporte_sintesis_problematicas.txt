@@ -1,0 +1,74 @@
+================================================================================
+REPORTE DE SINTESIS: PROBLEMATICAS ESTRUCTURALES
+DE LA DIGITALIZACION ESCOLAR EN CHILE (ENDDEIE 2023)
+================================================================================
+Fecha de generacion: 2026-02-22 19:34
+Total de problematicas identificadas: 5
+
+--------------------------------------------------------------------------------
+
+### PRIORIDAD CRITICA (2 problematicas)
+
+  1. Desarrollo desigual de capacidades digitales dentro de establecimientos
+     Tipo: Desalineacion interna
+     Nivel de analisis: Establecimientos
+     Descripcion: El 25% de los establecimientos con mayor desalineacion interna presenta un rango entre factores superior a 1.89. Esto indica que el desarrollo digital es fragmentario: algunos factores avanzan mientras otros se estancan, generando una digitalizacion incompleta y potencialmente ineficaz.
+     Evidencia: Rango medio: 1.55, Q75: 1.89
+
+  2. Desalineacion entre capacidades y apropiacion
+     Tipo: Desalineacion interna
+     Nivel de analisis: Sistema educativo
+     Descripcion: Se observa una desalineacion sistematica entre Apropiacion Pedagogica y Capacidades Digitales. La diferencia media entre factores (0.00) sugiere que la digitalizacion no avanza de forma homogenea en todas sus dimensiones.
+     Evidencia: Rango interno medio: 1.55
+
+--------------------------------------------------------------------------------
+
+### PRIORIDAD ALTA (2 problematicas)
+
+  1. Brecha urbano-rural en digitalizacion escolar
+     Tipo: Brecha territorial
+     Nivel de analisis: Territorial
+     Descripcion: Se identifican diferencias significativas entre establecimientos urbanos y rurales en 1 factores estructurales. La magnitud maxima alcanza 0.61 desviaciones estandar. Factores afectados: Gestion Liderazgo.
+     Evidencia: 1 brechas significativas detectadas
+
+  2. Inequidades segun tipo de administracion educativa
+     Tipo: Brecha institucional
+     Nivel de analisis: Institucional
+     Descripcion: La dependencia administrativa del establecimiento se asocia a diferencias en 3 factores de digitalizacion. Esto sugiere que las condiciones institucionales mediatizan el acceso a la innovacion digital de forma diferenciada.
+     Evidencia: 3 brechas significativas por dependencia
+
+--------------------------------------------------------------------------------
+
+### PRIORIDAD BAJA (1 problematicas)
+
+  1. Segmento significativo de establecimientos rezagados
+     Tipo: Segmentacion
+     Nivel de analisis: Tipologias de establecimientos
+     Descripcion: Un 15.5% de los establecimientos (181 de 1169) se ubica en tipologias con scores sistematicamente bajos en todas las dimensiones de digitalizacion. Estos establecimientos requieren intervencion integral, no solo de infraestructura.
+     Evidencia: 181 establecimientos en clusters rezagados
+
+--------------------------------------------------------------------------------
+
+CONCLUSION GENERAL
+================================================================================
+
+Las principales problematicas de la digitalizacion educativa en Chile
+no responden a deficits aislados, sino a desalineaciones estructurales
+entre capacidades, gestion y apropiacion pedagogica, que afectan de forma
+diferenciada a distintos tipos de establecimientos y territorios.
+
+Los hallazgos sugieren que:
+
+  1. La brecha urbano-rural trasciende la infraestructura y se extiende
+     a la gestion, la cultura de innovacion y las capacidades digitales.
+
+  2. Existen cuellos de botella estructurales que impiden que mejoras
+     parciales se traduzcan en avances sostenidos del sistema.
+
+  3. La segmentacion del sistema revela tipologias de establecimientos
+     con necesidades diferenciadas que requieren politicas focalizadas.
+
+  4. La desalineacion interna entre factores indica que el desarrollo
+     digital es fragmentario, lo que limita su impacto en el aprendizaje.
+
+================================================================================

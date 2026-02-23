@@ -1,0 +1,3 @@
+#csv y archivos xlsx
+*.csv
+*.xlsx
