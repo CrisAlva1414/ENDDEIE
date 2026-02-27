@@ -68,6 +68,12 @@ from src.synthesis.structural_pain_points import (
     guardar_dolores_csv,
 )
 
+# --- MODULOS ML (Etapa de Identificacion de Oportunidades de Software) ---
+from src.ml.dimensionality.latent_axes import ejecutar_dimensionalidad
+from src.ml.clustering.software_needs_profiles import ejecutar_perfiles_software
+from src.ml.explainability.drivers_and_barriers import ejecutar_explicabilidad
+from src.ml.evaluation.stability_checks import ejecutar_evaluacion_estabilidad
+
 
 def ejecutar_pipeline():
     """
@@ -257,6 +263,49 @@ def ejecutar_pipeline():
     if dolores:
         guardar_dolores_csv(dolores)
         generar_reporte_sintesis(dolores)
+
+    # =================================================================
+    # ETAPA ML — IDENTIFICACION DE OPORTUNIDADES DE SOFTWARE EDUCATIVO
+    # =================================================================
+    print("\n" + "=" * 80)
+    print("ETAPA ML — IDENTIFICACION DE OPORTUNIDADES DE SOFTWARE EDUCATIVO")
+    print("=" * 80)
+
+    # -----------------------------------------------------------------
+    # PASO 8: Reduccion dimensional — Ejes latentes
+    # -----------------------------------------------------------------
+    print("\n" + "-" * 80)
+    print("[PASO 8] REDUCCION DIMENSIONAL: EJES LATENTES DE NECESIDAD DIGITAL")
+    print("-" * 80)
+
+    res_dimensionalidad = ejecutar_dimensionalidad()
+
+    # -----------------------------------------------------------------
+    # PASO 9: Perfiles de necesidad de software educativo
+    # -----------------------------------------------------------------
+    print("\n" + "-" * 80)
+    print("[PASO 9] PERFILES DE NECESIDAD DE SOFTWARE EDUCATIVO")
+    print("-" * 80)
+
+    res_perfiles = ejecutar_perfiles_software()
+
+    # -----------------------------------------------------------------
+    # PASO 10: Explicabilidad — Drivers y barreras
+    # -----------------------------------------------------------------
+    print("\n" + "-" * 80)
+    print("[PASO 10] EXPLICABILIDAD: DRIVERS Y BARRERAS PARA LA ADOPCION DIGITAL")
+    print("-" * 80)
+
+    res_explicabilidad = ejecutar_explicabilidad()
+
+    # -----------------------------------------------------------------
+    # PASO 11: Evaluacion de estabilidad
+    # -----------------------------------------------------------------
+    print("\n" + "-" * 80)
+    print("[PASO 11] EVALUACION DE ESTABILIDAD")
+    print("-" * 80)
+
+    res_estabilidad = ejecutar_evaluacion_estabilidad()
 
     # -----------------------------------------------------------------
     # RESUMEN FINAL

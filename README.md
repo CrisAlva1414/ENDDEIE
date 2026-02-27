@@ -25,8 +25,11 @@ El objetivo central es **identificar problematicas estructurales ("dolores") del
 | Brechas detectadas | 25 (5 significativas) |
 | Tipologias de establecimientos | 3 |
 | Problematicas estructurales identificadas | 5 |
-| Tablas CSV generadas | 10 |
-| Figuras PNG generadas | 11 |
+| Perfiles de necesidad de software (ML) | 3 |
+| Drivers de adopcion digital (ML) | 12 |
+| Barreras de adopcion digital (ML) | 3 |
+| Tablas CSV generadas | 23 |
+| Figuras PNG generadas | 23 |
 | Reportes textuales | 1 |
 
 ---
@@ -64,7 +67,13 @@ main.py (orquestador)
   ├─ PASO 4 ─ src/gaps/structural_gaps.py         → Brechas estructurales
   ├─ PASO 5 ─ src/clustering/segment_schools.py   → Segmentacion (KMeans)
   ├─ PASO 6 ─ src/correlations/bottlenecks.py     → Correlaciones Spearman
-  └─ PASO 7 ─ src/synthesis/structural_pain_points.py → Sintesis de dolores
+  ├─ PASO 7 ─ src/synthesis/structural_pain_points.py → Sintesis de dolores
+  │
+  └─ ETAPA ML — Oportunidades de Software Educativo
+     ├─ PASO 8  ─ src/ml/dimensionality/latent_axes.py        → Ejes latentes (PCA + UMAP)
+     ├─ PASO 9  ─ src/ml/clustering/software_needs_profiles.py → Perfiles de necesidad de SW
+     ├─ PASO 10 ─ src/ml/explainability/drivers_and_barriers.py → Drivers y barreras
+     └─ PASO 11 ─ src/ml/evaluation/stability_checks.py        → Estabilidad (bootstrap)
 ```
 
 ### Estructura de directorios
@@ -89,10 +98,15 @@ ENDDEIE/
 │   ├── gaps/structural_gaps.py
 │   ├── clustering/segment_schools.py
 │   ├── correlations/bottlenecks.py
-│   └── synthesis/structural_pain_points.py
+│   ├── synthesis/structural_pain_points.py
+│   └── ml/
+│       ├── dimensionality/latent_axes.py
+│       ├── clustering/software_needs_profiles.py
+│       ├── explainability/drivers_and_barriers.py
+│       └── evaluation/stability_checks.py
 └── outputs/
-    ├── tables/    (10 archivos CSV)
-    ├── figures/   (11 archivos PNG)
+    ├── tables/    (23 archivos CSV)
+    ├── figures/   (23 archivos PNG)
     └── reports/   (1 reporte textual)
 ```
 
@@ -476,7 +490,7 @@ La priorizacion se basa en la magnitud del efecto:
 
 ---
 
-## 12. Inventario Completo de Outputs
+## 12. Inventario de Outputs — Analisis Estructural (Pasos 1-7)
 
 ### 12.1 Tablas analiticas (`outputs/tables/`)
 
@@ -517,7 +531,344 @@ La priorizacion se basa en la magnitud del efecto:
 
 ---
 
-## 13. Librerias Utilizadas
+## 13. Etapa ML — Identificacion de Oportunidades de Software Educativo
+
+### 13.1 Objetivo y Metodologia
+
+Esta etapa extiende el analisis estructural de la ENDDEIE 2023 hacia la **identificacion empirica de oportunidades de desarrollo de software educativo**. Mientras los pasos 1-7 caracterizan las problematicas de la digitalizacion escolar, los pasos 8-11 traducen esos patrones en perfiles de necesidad de producto digital, drivers de adopcion y validaciones de robustez.
+
+La metodologia integra cuatro tecnicas complementarias:
+
+| Paso | Modulo | Tecnica | Objetivo |
+|------|--------|---------|----------|
+| 8 | `src/ml/dimensionality/latent_axes.py` | PCA + UMAP | Identificar ejes latentes de necesidad digital |
+| 9 | `src/ml/clustering/software_needs_profiles.py` | KMeans dual (scores + desalineacion) | Construir perfiles de necesidad de software |
+| 10 | `src/ml/explainability/drivers_and_barriers.py` | Random Forest + Arbol de Decision | Detectar drivers y barreras para la adopcion digital |
+| 11 | `src/ml/evaluation/stability_checks.py` | Bootstrap (100 iteraciones) | Evaluar estabilidad de clusters y ejes |
+
+### Arquitectura de la extension ML
+
+```
+src/ml/
+  ├── dimensionality/
+  │   └── latent_axes.py              → PCA factores, PCA dimensiones, UMAP
+  ├── clustering/
+  │   └── software_needs_profiles.py  → Clustering dual, perfilamiento de producto
+  ├── explainability/
+  │   └── drivers_and_barriers.py     → RF importancias, arbol de reglas, drivers/barreras
+  └── evaluation/
+      └── stability_checks.py         → Bootstrap clusters, bootstrap PCA
+```
+
+Cada modulo carga exclusivamente los outputs ya generados por el pipeline base (ej: `scores_factores_establecimiento.csv`) y no recalcula factores ni brechas.
+
+---
+
+### 13.2 PASO 8 — Reduccion Dimensional: Ejes Latentes de Necesidad Digital
+
+#### Script: `src/ml/dimensionality/latent_axes.py`
+
+**Que se hizo.** Se aplicaron dos tecnicas de reduccion dimensional complementarias:
+
+1. **PCA sobre los 5 factores estructurales** para identificar ejes latentes a nivel agregado.
+2. **PCA sobre las 12 dimensiones compuestas** originales para mayor granularidad analitica.
+3. **UMAP** para una proyeccion 2D no lineal que captura estructuras manifold no detectadas por PCA.
+
+**Por que se hizo.** Los 5 factores estructurales, si bien interpretables, pueden ocultar ejes de necesidad transversales. PCA permite identificar combinaciones lineales de factores que concentran la mayor variabilidad del sistema, mientras que UMAP revela agrupaciones no lineales.
+
+#### Varianza explicada (PCA sobre factores)
+
+| Componente | Varianza Explicada | Acumulada | Interpretacion |
+|------------|-------------------:|----------:|----------------|
+| Eje 1 | 35,2% | 35,2% | Eje de infraestructura vs. capacidades (carga dominante: Infraestructura 0,91) |
+| Eje 2 | 31,8% | 67,0% | Eje de madurez pedagogica-digital (cargas: Capacidades 0,60, Apropiacion 0,47) |
+| Eje 3 | 15,2% | 82,2% | Eje de gestion institucional (carga: Gestion 0,76) |
+| Eje 4 | 9,6% | 91,8% | Eje de apropiacion pedagogica vs. cultura (carga: Apropiacion 0,79) |
+| Eje 5 | 8,1% | 100% | Eje de cultura de innovacion (carga: Cultura 0,74) |
+
+> **Hallazgo clave.** El primer eje latente (35,2% de la varianza) esta dominado por Infraestructura y Acceso (carga 0,91), confirmando que esta dimension es el principal diferenciador entre establecimientos. El segundo eje captura la madurez pedagogica-digital, lo que sugiere que **dos tipos de software responden a las dos principales fuentes de variabilidad del sistema**: soluciones de infraestructura/conectividad y plataformas de desarrollo de competencias docentes.
+
+#### Varianza explicada (PCA sobre 12 dimensiones)
+
+Los primeros 5 ejes explican el 62,8% de la varianza total. La interpretacion automatica basada en cargas sugiere tres tipos de necesidad de software:
+
+| Eje | Varianza | Tipo de necesidad sugerida |
+|-----|----------|---------------------------|
+| Eje 1 | 22,2% | Plataforma de desarrollo de competencias docentes |
+| Eje 2 | 14,9% | Software de gestion escolar y liderazgo digital |
+| Eje 3 | 8,8% | Plataforma de desarrollo de competencias docentes |
+| Eje 4 | 8,7% | Software de gestion escolar y liderazgo digital |
+| Eje 5 | 8,2% | Software de gestion pedagogica integrada |
+
+**Tablas de salida:**
+- `outputs/tables/ml_cargas_pca_factores.csv`
+- `outputs/tables/ml_cargas_pca_dimensiones.csv`
+- `outputs/tables/ml_interpretacion_ejes_latentes.csv`
+- `outputs/tables/ml_proyecciones_establecimientos.csv`
+
+#### Graficos generados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `ml_varianza_explicada_pca.png` | Panel dual: varianza PCA sobre factores (5 vars) y dimensiones (12 vars) |
+| `ml_proyeccion_pca_2d.png` | Scatter 2D PCA coloreado por zona y tipologia |
+| `ml_proyeccion_umap_2d.png` | Scatter 2D UMAP coloreado por zona y tipologia |
+| `ml_cargas_pca_ejes_dimensiones.png` | Heatmap de cargas por eje latente (12 dimensiones) |
+| `ml_cargas_pca_ejes_factores.png` | Heatmap de cargas por eje latente (5 factores) |
+
+---
+
+### 13.3 PASO 9 — Perfiles de Necesidad de Software Educativo
+
+#### Script: `src/ml/clustering/software_needs_profiles.py`
+
+**Que se hizo.** Se ejecutaron dos enfoques de clustering KMeans en paralelo:
+
+1. **Clustering por scores directos**: segmenta establecimientos segun su nivel absoluto en cada factor.
+2. **Clustering por desalineacion interna**: segmenta establecimientos segun sus patrones de desequilibrio entre factores (rango, diferencias entre pares estrategicos).
+
+Se evaluo el rango k=[2,7] para cada enfoque, seleccionando el k con mayor coeficiente de silueta. Los perfiles resultantes fueron traducidos automaticamente a lenguaje de producto.
+
+**Comparacion de enfoques:**
+
+| Enfoque | k optimo | Silueta |
+|---------|:--------:|:-------:|
+| Scores directos | 3 | 0,2182 |
+| Desalineacion interna | 3 | 0,1888 |
+
+El enfoque por scores directos fue seleccionado como principal por presentar mayor separacion entre clusters.
+
+#### Perfiles de necesidad identificados
+
+| Perfil | N | % Sistema | Tipo | Solucion Sugerida |
+|--------|--:|:---------:|------|-------------------|
+| **Perfil mixto (fortaleza: Infraestructura)** | 498 | 42,6% | Transversal | Solucion adaptativa segun diagnostico institucional |
+| **Digitalmente maduro** | 490 | 41,9% | Administrativo | Plataforma avanzada de analitica e innovacion educativa |
+| **Deficit critico de infraestructura** | 181 | 15,5% | Transversal | Solucion offline-first con sincronizacion diferida |
+
+> **Interpretacion para desarrollo de producto:**
+>
+> - **Perfil mixto (42,6%):** Establecimientos con infraestructura superior al promedio pero scores negativos en gestion, cultura, apropiacion y capacidades. Necesitan una solucion adaptativa que diagnostique sus brechas especificas y proporcione modulos de intervencion diferenciados. El mercado potencial es el mayor del sistema.
+>
+> - **Digitalmente maduro (41,9%):** Establecimientos con scores positivos en todos los factores. Su necesidad principal no es remedial sino de profundizacion: analitica educativa avanzada, dashboard de indicadores, herramientas de innovacion colaborativa.
+>
+> - **Deficit critico de infraestructura (15,5%):** Establecimientos con score de infraestructura extremadamente bajo (-1,75 d.e.) pero niveles cercanos al promedio en otros factores. Requieren soluciones que funcionen con conectividad limitada o intermitente (offline-first), con sincronizacion diferida cuando haya conexion disponible.
+
+**Tablas de salida:**
+- `outputs/tables/ml_perfiles_necesidad_software.csv`
+- `outputs/tables/ml_asignacion_perfiles_software.csv`
+- `outputs/tables/ml_comparacion_enfoques_clustering.csv`
+
+#### Graficos generados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `ml_perfiles_necesidad_software.png` | Heatmap de perfiles con tipo de software anotado |
+| `ml_comparacion_clustering_enfoques.png` | Comparacion side-by-side de ambos enfoques de clustering |
+| `ml_radar_perfiles_necesidad.png` | Radar chart por perfil de necesidad |
+
+---
+
+### 13.4 PASO 10 — Explicabilidad: Drivers y Barreras para la Adopcion Digital
+
+#### Script: `src/ml/explainability/drivers_and_barriers.py`
+
+**Que se hizo.** Se entrenaron dos modelos explicativos sobre las 12 dimensiones compuestas, la desalineacion interna y variables de contexto (zona, dependencia), con el objetivo de explicar la pertenencia a los perfiles de necesidad de software:
+
+1. **Random Forest (200 arboles, max_depth=6):** para obtener importancia de variables por indice Gini.
+2. **Arbol de Decision (max_depth=4):** para extraer reglas interpretables de clasificacion.
+
+**Metricas informativas (no es el objetivo principal):**
+
+| Modelo | Accuracy CV (5-fold) |
+|--------|:--------------------:|
+| Random Forest | 0,887 +/- 0,020 |
+| Arbol de Decision | 0,778 +/- 0,032 |
+
+> La accuracy del RF (88,7%) indica que las dimensiones compuestas de la ENDDEIE discriminan fuertemente entre perfiles de necesidad, lo cual valida la coherencia de la segmentacion.
+
+#### Ranking de importancia de variables (Top 10)
+
+| # | Variable | Importancia (%) |
+|:-:|----------|:--------------:|
+| 1 | Acceso (inverso) | 43,3% |
+| 2 | Efectos | 9,7% |
+| 3 | Desalineacion Interna | 8,6% |
+| 4 | Habilidades | 7,3% |
+| 5 | Actividades | 6,8% |
+| 6 | Innov. Ensenanza-Aprendizaje | 4,5% |
+| 7 | Liderazgo Escolar | 3,9% |
+| 8 | Marco Institucional | 3,5% |
+| 9 | Promotores/Barreras | 3,0% |
+| 10 | Actitudes | 3,0% |
+
+> **Hallazgo clave.** La variable Acceso (inverso) concentra el 43,3% de la importancia, lo que confirma que la infraestructura es el principal discriminador entre perfiles de necesidad de software. Sin embargo, las siguientes cuatro variables (Efectos, Desalineacion, Habilidades, Actividades) acumulan un 32,5% adicional y son de naturaleza pedagogica-digital, indicando que las intervenciones de software mas efectivas deben abordar ambos ejes.
+
+#### Clasificacion de Drivers y Barreras
+
+| Variable | Rol | Importancia | Interpretacion |
+|----------|-----|:-----------:|----------------|
+| Marco Institucional | DRIVER | 3,5% | Valores altos facilitan la madurez digital |
+| Liderazgo Escolar | DRIVER | 3,9% | Valores altos facilitan la madurez digital |
+| Actividades | DRIVER | 6,8% | Valores altos facilitan la madurez digital |
+| Apoyo al Uso | DRIVER | 1,8% | Valores altos facilitan la madurez digital |
+| Innov. Ensenanza-Aprendizaje | DRIVER | 4,5% | Valores altos facilitan la madurez digital |
+| Promotores/Barreras | DRIVER | 3,0% | Valores altos facilitan la madurez digital |
+| Practicas de Innovacion | DRIVER | 2,2% | Valores altos facilitan la madurez digital |
+| Efectos | DRIVER | 9,7% | Valores altos facilitan la madurez digital |
+| Habilidades | DRIVER | 7,3% | Valores altos facilitan la madurez digital |
+| Actitudes | DRIVER | 3,0% | Valores altos facilitan la madurez digital |
+| Mentalidad Innovadora | DRIVER | 1,2% | Valores altos facilitan la madurez digital |
+| Zona (Rural=1) | DRIVER | 1,0% | Valores altos facilitan la madurez digital |
+| **Acceso (inverso)** | **BARRERA** | **43,3%** | **Variable en escala inversa: valores altos indican peor acceso** |
+| Desalineacion Interna | BARRERA | 8,6% | Valores altos se asocian a menor madurez digital |
+| Dependencia Adm. | BARRERA | 0,4% | Valores altos se asocian a menor madurez digital |
+
+> **Interpretacion para desarrollo de producto:** Los 12 drivers identificados cubren todas las dimensiones del proceso educativo (liderazgo, innovacion, habilidades, actitudes). Esto implica que una solucion de software efectiva debe ser **multidimensional**: no basta un LMS o un sistema de gestion; se requiere una plataforma que integre gestion institucional, desarrollo profesional docente y apoyo a la innovacion pedagogica. Las dos barreras principales (deficit de acceso y desalineacion interna) deben ser abordadas como prerequisitos: sin infraestructura minima y sin alineacion entre capacidades, las herramientas digitales no seran adoptadas.
+
+**Tablas de salida:**
+- `outputs/tables/ml_importancia_variables_rf.csv`
+- `outputs/tables/ml_drivers_barreras_adopcion.csv`
+- `outputs/tables/ml_reglas_arbol_decision.csv`
+
+#### Graficos generados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `ml_importancia_variables_rf.png` | Ranking de importancia de variables (Random Forest) |
+| `ml_drivers_vs_barreras.png` | Grafico divergente de drivers vs. barreras |
+| `ml_arbol_decision_perfiles.png` | Arbol de decision visualizado con reglas |
+
+---
+
+### 13.5 PASO 11 — Evaluacion de Estabilidad
+
+#### Script: `src/ml/evaluation/stability_checks.py`
+
+**Que se hizo.** Se evaluo la robustez de los resultados mediante 100 iteraciones de bootstrap con subsampling al 80%:
+
+1. **Estabilidad de clusters:** se reejecutaron los KMeans en cada muestra y se comparo con la solucion de referencia usando el Adjusted Rand Index (ARI).
+2. **Estabilidad de PCA:** se recalculo el PCA en cada muestra y se evaluo la consistencia de la varianza explicada y las cargas del primer componente.
+
+#### Resumen de estabilidad
+
+| Analisis | Metrica | Media | Desv. Est. | Min | Max | Interpretacion |
+|----------|---------|:-----:|:----------:|:---:|:---:|----------------|
+| Clustering (KMeans) | ARI vs referencia | 0,9412 | 0,0386 | 0,8047 | 0,9923 | **Clusters altamente estables** |
+| Clustering (KMeans) | Silueta bootstrap | 0,2190 | 0,0036 | 0,2071 | 0,2254 | Superposicion significativa, coherente con datos continuos |
+| PCA (dimensiones) | Varianza PC1 | 0,2227 | 0,0048 | 0,2112 | 0,2336 | **Estructura dimensional estable** |
+| PCA (dimensiones) | Correlacion cargas PC1 | 0,9909 | 0,0087 | 0,9359 | 0,9987 | **Ejes latentes muy estables** |
+
+> **Interpretacion:** Los resultados son robustos. El ARI medio de 0,94 indica que la solucion de clustering se reproduce consistentemente en submuestras, lo que valida los perfiles de necesidad de software como estructuras reales del sistema (no artefactos del muestreo). La correlacion de cargas PCA de 0,99 confirma que los ejes latentes son estables y no dependen de la muestra especifica.
+
+**Tablas de salida:**
+- `outputs/tables/ml_estabilidad_clusters.csv`
+- `outputs/tables/ml_estabilidad_pca.csv`
+- `outputs/tables/ml_resumen_estabilidad.csv`
+
+#### Graficos generados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `ml_estabilidad_bootstrap.png` | Panel 2x2 con distribucion de ARI, silueta, varianza PC1 y correlacion de cargas |
+
+---
+
+### 13.6 Sintesis: Implicancias para Desarrollo de Productos Digitales
+
+Los resultados de la etapa ML permiten responder tres preguntas clave para el desarrollo de software educativo en Chile:
+
+#### Pregunta 1: Que tipo de software necesitan hoy las escuelas chilenas?
+
+Se identifican **tres segmentos de demanda diferenciados**:
+
+1. **Solucion adaptativa de diagnostico e intervencion diferenciada (42,6% del sistema):** Para establecimientos con infraestructura disponible pero brechas en capacidades, gestion y apropiacion. Requiere modulos configurables que se adapten al perfil especifico de cada escuela.
+
+2. **Plataforma avanzada de analitica e innovacion educativa (41,9%):** Para establecimientos digitalmente maduros que necesitan profundizar su uso de tecnologia: dashboards de indicadores, analitica de aprendizaje, herramientas de colaboracion docente avanzada.
+
+3. **Solucion offline-first con sincronizacion diferida (15,5%):** Para establecimientos con deficit critico de infraestructura. Debe funcionar sin conexion permanente, sincronizando datos cuando la conectividad este disponible.
+
+#### Pregunta 2: Que perfiles concentran mayor demanda potencial?
+
+El segmento de mayor volumen (42,6%) corresponde a establecimientos con **infraestructura disponible pero sin apropiacion efectiva**. Este es el mercado con mayor potencial de impacto y escalabilidad, dado que la barrera de acceso ya esta parcialmente resuelta. El segundo segmento (41,9%) representa demanda de productos de mayor sofisticacion.
+
+#### Pregunta 3: Que factores estructurales deben abordarse para que una solucion digital sea adoptada y escalable?
+
+El analisis de drivers y barreras revela que:
+
+- **Barrera critica (43,3% de importancia):** El deficit de infraestructura y acceso es el principal bloqueador. Cualquier solucion que no contemple escenarios de baja conectividad perdera al 15,5% del mercado.
+- **Barrera secundaria (8,6%):** La desalineacion interna entre factores indica que no basta con abordar un solo eje. Las soluciones monodimensionales (solo LMS, solo gestion, solo capacitacion) tendran baja adopcion.
+- **Drivers clave:** Los factores pedagogicos (Efectos, Habilidades, Actividades) y de liderazgo institucional (Marco Institucional, Liderazgo Escolar) son los principales facilitadores. Una solucion de software que integre **acompanamiento pedagogico** con **herramientas de gestion para directivos** tiene el mayor potencial de adopcion sostenida.
+
+---
+
+## 14. Inventario Completo de Outputs
+
+### 14.1 Tablas analiticas (`outputs/tables/`)
+
+| Archivo | Paso | Descripcion | Filas |
+|---------|:----:|-------------|------:|
+| `validacion_estructura_datos.csv` | 1 | Resumen de integridad por dataset | 7 |
+| `mapa_indicadores_dimensiones.csv` | 2 | Mapeo de 68 indicadores a factores | 68 |
+| `scores_factores_establecimiento.csv` | 3 | Score por factor para cada establecimiento | 1.174 |
+| `resumen_scores_por_zona.csv` | 3 | Media, mediana y d.e. de scores por zona | 2 |
+| `brechas_estructurales.csv` | 4 | 25 brechas detectadas con magnitud | 25 |
+| `clustering_establecimientos.csv` | 5 | Asignacion de cluster por establecimiento | 1.174 |
+| `perfiles_clusters.csv` | 5 | Perfil de scores por tipologia | 3 |
+| `matriz_correlaciones_spearman.csv` | 6 | Correlaciones entre factores | 6x6 |
+| `cuellos_botella_estructurales.csv` | 6 | Severidad de cada factor como cuello de botella | 6 |
+| `dolores_estructurales_priorizados.csv` | 7 | 5 problematicas con prioridad y evidencia | 5 |
+| `ml_cargas_pca_factores.csv` | 8 | Cargas PCA sobre 5 factores estructurales | 5 |
+| `ml_cargas_pca_dimensiones.csv` | 8 | Cargas PCA sobre 12 dimensiones compuestas | 12 |
+| `ml_interpretacion_ejes_latentes.csv` | 8 | Interpretacion automatica de ejes PCA | 12 |
+| `ml_proyecciones_establecimientos.csv` | 8 | Coordenadas PCA y UMAP por establecimiento | 1.169 |
+| `ml_perfiles_necesidad_software.csv` | 9 | Perfiles de necesidad con tipo de software | 3 |
+| `ml_asignacion_perfiles_software.csv` | 9 | Asignacion de perfil por establecimiento | 1.169 |
+| `ml_comparacion_enfoques_clustering.csv` | 9 | Comparacion scores vs desalineacion | 2 |
+| `ml_importancia_variables_rf.csv` | 10 | Importancia de variables (Random Forest) | 15 |
+| `ml_drivers_barreras_adopcion.csv` | 10 | Drivers y barreras clasificados | 15 |
+| `ml_reglas_arbol_decision.csv` | 10 | Reglas del arbol de decision | 1 |
+| `ml_estabilidad_clusters.csv` | 11 | 100 iteraciones bootstrap de clusters | 100 |
+| `ml_estabilidad_pca.csv` | 11 | 100 iteraciones bootstrap de PCA | 100 |
+| `ml_resumen_estabilidad.csv` | 11 | Resumen consolidado de estabilidad | 4 |
+
+### 14.2 Figuras (`outputs/figures/`)
+
+| Archivo | Paso | Descripcion |
+|---------|:----:|-------------|
+| `brechas_scores_por_zona.png` | 4 | Barras comparativas de scores por zona |
+| `boxplot_scores_por_zona.png` | 4 | Distribucion de scores por zona |
+| `perfil_factores_por_zona.png` | 4 | Perfil de fortalezas/debilidades por zona |
+| `desalineacion_interna_factores.png` | 4 | Histograma de rango interno por establecimiento |
+| `seleccion_k_clusters.png` | 5 | Metodo del codo y coeficiente de silueta |
+| `heatmap_perfiles_clusters.png` | 5 | Mapa de calor de perfiles por tipologia |
+| `pca_clusters_establecimientos.png` | 5 | Proyeccion PCA 2D de clusters |
+| `composicion_clusters_zona.png` | 5 | Composicion territorial de cada tipologia |
+| `heatmap_correlaciones_spearman.png` | 6 | Matriz de correlaciones entre factores |
+| `cuellos_botella_estructurales.png` | 6 | Ranking de severidad como cuello de botella |
+| `correlaciones_por_zona.png` | 6 | Comparacion de correlaciones urbano vs. rural |
+| `ml_varianza_explicada_pca.png` | 8 | Panel dual de varianza PCA (factores y dimensiones) |
+| `ml_proyeccion_pca_2d.png` | 8 | Scatter 2D PCA por zona y tipologia |
+| `ml_proyeccion_umap_2d.png` | 8 | Scatter 2D UMAP por zona y tipologia |
+| `ml_cargas_pca_ejes_dimensiones.png` | 8 | Heatmap de cargas por eje (12 dimensiones) |
+| `ml_cargas_pca_ejes_factores.png` | 8 | Heatmap de cargas por eje (5 factores) |
+| `ml_perfiles_necesidad_software.png` | 9 | Heatmap de perfiles de necesidad de software |
+| `ml_comparacion_clustering_enfoques.png` | 9 | Comparacion de enfoques de clustering |
+| `ml_radar_perfiles_necesidad.png` | 9 | Radar chart de perfiles de necesidad |
+| `ml_importancia_variables_rf.png` | 10 | Importancia de variables (Random Forest) |
+| `ml_drivers_vs_barreras.png` | 10 | Grafico divergente de drivers vs. barreras |
+| `ml_arbol_decision_perfiles.png` | 10 | Arbol de decision visualizado |
+| `ml_estabilidad_bootstrap.png` | 11 | Panel 2x2 de metricas de estabilidad |
+
+### 14.3 Reportes (`outputs/reports/`)
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `reporte_sintesis_problematicas.txt` | Listado priorizado con conclusion general |
+
+---
+
+## 15. Librerias Utilizadas
 
 ```python
 import pandas as pd              # Manipulacion de datos tabulares
@@ -526,25 +877,48 @@ from sklearn.preprocessing import StandardScaler   # Normalizacion
 from sklearn.decomposition import PCA              # Reduccion dimensional
 from sklearn.cluster import KMeans                 # Segmentacion
 from sklearn.metrics import silhouette_score        # Evaluacion de clusters
+from sklearn.metrics import adjusted_rand_score     # Estabilidad de clusters
+from sklearn.ensemble import RandomForestClassifier # Importancia de variables
+from sklearn.tree import DecisionTreeClassifier     # Reglas interpretables
+from sklearn.model_selection import cross_val_score # Validacion cruzada
 import scipy.stats as stats       # Correlaciones Spearman
+import umap                       # Proyeccion no lineal UMAP
 import seaborn as sns             # Visualizacion estadistica
 import matplotlib.pyplot as plt   # Graficos
 ```
 
 ---
 
-## 14. Ejecucion
+## 16. Ejecucion
 
 ```bash
-cd /home/notebook01/Proyectos/ENDDEIE
+cd /home/pc01/Proyectos/ENDDEIE
 python main.py
 ```
 
-El pipeline completo se ejecuta en un unico comando y genera todos los outputs automaticamente.
+El pipeline completo (pasos 1-11) se ejecuta en un unico comando y genera todos los outputs automaticamente.
+
+### Resultados cuantitativos del pipeline completo
+
+| Metrica | Valor |
+|---------|-------|
+| Establecimientos analizados | 1.174 |
+| Docentes incorporados | 3.736 |
+| Estudiantes incorporados | 10.326 |
+| Factores estructurales construidos | 5 |
+| Brechas detectadas | 25 (5 significativas) |
+| Tipologias de establecimientos | 3 |
+| Problematicas estructurales identificadas | 5 |
+| Perfiles de necesidad de software | 3 |
+| Drivers de adopcion identificados | 12 |
+| Barreras de adopcion identificadas | 3 |
+| Tablas CSV generadas | 23 |
+| Figuras PNG generadas | 23 |
+| Reportes textuales | 1 |
 
 ---
 
-## 15. Conclusion General
+## 17. Conclusion General
 
 El analisis estructural de la ENDDEIE 2023 permite concluir, con evidencia empirica:
 
@@ -558,4 +932,8 @@ El analisis estructural de la ENDDEIE 2023 permite concluir, con evidencia empir
 
 5. **La apropiacion pedagogica es el factor mas estrategico.** Con la mayor conectividad (correlacion media de 0,34 y 3 relaciones fuertes), mejoras en apropiacion pedagogica tienen el mayor potencial de impacto cascada hacia otros factores.
 
-> **Tesis de cierre.** Las principales problematicas de la digitalizacion educativa en Chile no responden a deficits aislados, sino a **desalineaciones estructurales entre capacidades, gestion y apropiacion pedagogica**, que afectan de forma diferenciada a distintos tipos de establecimientos y territorios. Las soluciones deben ser integrales, diferenciadas y centradas en la apropiacion pedagogica como eje articulador.
+6. **Existen tres perfiles diferenciados de necesidad de software.** El 42,6% del sistema necesita soluciones adaptativas de diagnostico e intervencion; el 41,9% requiere plataformas avanzadas de analitica; y el 15,5% necesita soluciones offline-first por deficit critico de infraestructura.
+
+7. **Los resultados son robustos.** La evaluacion de estabilidad (ARI=0,94; correlacion de cargas PCA=0,99) confirma que los perfiles y ejes identificados son estructuras reales del sistema, no artefactos estadisticos.
+
+> **Tesis de cierre.** Las principales problematicas de la digitalizacion educativa en Chile no responden a deficits aislados, sino a **desalineaciones estructurales entre capacidades, gestion y apropiacion pedagogica**, que afectan de forma diferenciada a distintos tipos de establecimientos y territorios. El analisis ML confirma que las oportunidades de software educativo deben ser **diferenciadas por perfil de necesidad**, **multidimensionales** (no monodimensionales) y **robustas frente a escenarios de baja conectividad**. Las soluciones con mayor potencial de adopcion son aquellas que integran acompanamiento pedagogico con herramientas de gestion institucional, abordando simultaneamente los drivers de madurez digital y las barreras de acceso e infraestructura.
